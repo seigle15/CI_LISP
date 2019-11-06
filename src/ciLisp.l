@@ -30,7 +30,7 @@ func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"
     }
 
 {func} {
-    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char));
+    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char) + 1);
     strcpy(yylval.sval, yytext);
     fprintf(stderr, "lex: FUNC sval = %s\n", yylval.sval);
     return FUNC;

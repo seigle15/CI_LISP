@@ -62,6 +62,11 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
         yyerror("Memory allocation failed!");
 
     // TODO set the AST_NODE's type, assign values to contained NUM_AST_NODE
+    node->type = type;
+//    switch (node->type){
+//        case :
+//    }
+    //node->data = value;
 
     return node;
 }
