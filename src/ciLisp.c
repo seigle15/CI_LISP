@@ -61,7 +61,6 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
     if ((node = calloc(nodeSize, 1)) == NULL)
         yyerror("Memory allocation failed!");
 
-    // TODO set the AST_NODE's type, assign values to contained NUM_AST_NODE
     node->type = NUM_NODE_TYPE;
     switch (type){
         case INT_TYPE:
@@ -102,6 +101,11 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     // The funcName will be a string identifier for which space should be allocated in the tokenizer.
     // For CUSTOM_OPER functions, you should simply assign the "ident" pointer to the passed in funcName.
     // For functions other than CUSTOM_OPER, you should free the funcName after you're assigned the OPER_TYPE.
+    node->type = FUNC_NODE_TYPE;
+    node->data.function.oper = resolveFunc(funcName);
+    node->data.function.op1 = op1;
+    node->data.function.op2 = op2;
+    evalFuncNode(&node->data.function);
 
     return node;
 }
@@ -147,6 +151,12 @@ RET_VAL eval(AST_NODE *node)
     // Use the results of those calls to populate result.
     switch (node->type)
     {
+        case NUM_NODE_TYPE:
+
+            break;
+        case FUNC_NODE_TYPE:
+
+            break;
 
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
@@ -181,7 +191,10 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 
     // TODO populate result with the result of running the function on its operands.
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
-
+    switch (funcNode->oper){
+        case NEG_OPER :
+            funcNode->op1.
+    }
 
     return result;
 }
