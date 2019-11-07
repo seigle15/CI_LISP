@@ -62,11 +62,19 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
         yyerror("Memory allocation failed!");
 
     // TODO set the AST_NODE's type, assign values to contained NUM_AST_NODE
-    node->type = type;
-//    switch (node->type){
-//        case :
-//    }
-    //node->data = value;
+    node->type = NUM_NODE_TYPE;
+    switch (type){
+        case INT_TYPE:
+            node->data.number.type = INT_TYPE;
+            node->data.number.value.ival = value;
+            break;
+        case DOUBLE_TYPE:
+            node->data.number.type = DOUBLE_TYPE;
+            node->data.number.value.dval = value;
+        default:
+            printf("Invalid NUM_TYPE type!");
+            break;
+    }
 
     return node;
 }
@@ -139,6 +147,7 @@ RET_VAL eval(AST_NODE *node)
     // Use the results of those calls to populate result.
     switch (node->type)
     {
+
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
     }
