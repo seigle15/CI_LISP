@@ -9,6 +9,8 @@
 digit [0-9]
 int [+-]?{digit}+
 double [+-]?{digit}+(\.{digit}+)?
+letter [a-zA-z]
+symbol {letter}+
 func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"
 
 %%
@@ -27,6 +29,11 @@ func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"
 
 "quit" {
     return QUIT;
+    }
+
+"let" {
+    fprintf(stderr, "lex: LET");
+    return LET;
     }
 
 {func} {
@@ -56,6 +63,13 @@ func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"
 
 . { // anything else
     printf("ERROR: invalid character: >>%s<<\n", yytext);
+    }
+
+{symbol} {
+        yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char) + 1);
+        strcpy(yylval.sval, yytext);
+        fprintf(stderr, "lex: SYMBOL sval = %s\n", yylval.sval);
+        return SYMBOL;
     }
 
 %%
