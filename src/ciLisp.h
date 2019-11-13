@@ -104,6 +104,6 @@ void printRetVal(RET_VAL val);
 
 /*  HELPER FUNCTIONS  */
 
-RET_VAL resolveOneOp(RET_VAL *retVal, NUM_TYPE type, double val);
-//RET_VAL resolveDualOp(FUNC_AST_NODE *funcAstNode, double(*f));
+RET_VAL resolveOp(NUM_TYPE type, double val);
+
 #endif
