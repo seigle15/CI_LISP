@@ -8,8 +8,8 @@
 
 digit [0-9]
 int [+-]?{digit}+
-double [+-]?{digit}\.{digit}*
-func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"
+double [+-]?{digit}+(\.{digit}+)?
+func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"
 
 %%
 
