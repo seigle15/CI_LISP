@@ -226,7 +226,8 @@ void printRetVal(RET_VAL val)
 {
     // TODO print the type and value of the value passed in.
     if (val.type == INT_TYPE){
-        printf("INT_TYPE: %d", round(val.val));
+
+        printf("INT_TYPE: %f", round(val.val));
     }
     else{
         printf("DOUBLE_TYPE: %f", val.val);
