@@ -63,10 +63,7 @@ typedef enum {
 // Node to store a number.
 typedef struct {
     NUM_TYPE type;
-    union{
-        double dval;
-        long ival;
-    } value;
+    double val;
 } NUM_AST_NODE;
 
 // Values returned by eval function will be numbers with a type.
@@ -104,4 +101,9 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
 
 void printRetVal(RET_VAL val);
 
+
+/*  HELPER FUNCTIONS  */
+
+RET_VAL resolveOneOp(RET_VAL *retVal, NUM_TYPE type, double val);
+//RET_VAL resolveDualOp(FUNC_AST_NODE *funcAstNode, double(*f));
 #endif

@@ -65,11 +65,12 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
     switch (type){
         case INT_TYPE:
             node->data.number.type = INT_TYPE;
-            node->data.number.value.ival = value;
+
+            node->data.number.val = floor(value);
             break;
         case DOUBLE_TYPE:
             node->data.number.type = DOUBLE_TYPE;
-            node->data.number.value.dval = value;
+            node->data.number.val = value;
         default:
             printf("Invalid NUM_TYPE type!");
             break;
@@ -152,12 +153,13 @@ RET_VAL eval(AST_NODE *node)
     switch (node->type)
     {
         case NUM_NODE_TYPE:
-
+            node->type = NUM_NODE_TYPE;
+            evalNumNode(&node->data.number);
             break;
         case FUNC_NODE_TYPE:
-
+            node->type = FUNC_NODE_TYPE;
+            evalFuncNode(&node->data.function);
             break;
-
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
     }
@@ -174,9 +176,15 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode)
 
     RET_VAL result = {INT_TYPE, NAN};
 
-    // TODO populate result with the values stored in the node.
     // SEE: AST_NODE, AST_NODE_TYPE, NUM_AST_NODE
-
+    if(numNode->type == INT_TYPE){
+        result.type = INT_TYPE;
+        result.val = floor(numNode->val);
+    }
+    else{
+        result.type = DOUBLE_TYPE;
+        result.val = numNode->val;
+    }
 
     return result;
 }
@@ -191,9 +199,23 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 
     // TODO populate result with the result of running the function on its operands.
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
+
+    RET_VAL op1 = eval(funcNode->op1);
     switch (funcNode->oper){
         case NEG_OPER :
-            funcNode->op1.
+            resolveOneOp(&result, op1.type, -op1.val);
+            break;
+        case ABS_OPER:
+            resolveOneOp(&result, op1.type, fabs(op1.val));
+            break;
+        case EXP_OPER:
+            resolveOneOp(&result, op1.type, exp(op1.val));
+            break;
+
+        case ADD_OPER:
+            //result = resolveDualOp(funcNode, *(+));
+        default:
+            break;
     }
 
     return result;
@@ -203,4 +225,33 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 void printRetVal(RET_VAL val)
 {
     // TODO print the type and value of the value passed in.
+    if (val.type == INT_TYPE){
+        printf("INT_TYPE: %d", round(val.val));
+    }
+    else{
+        printf("DOUBLE_TYPE: %f", val.val);
+    }
+
 }
+
+RET_VAL resolveOneOp(RET_VAL *retVal, NUM_TYPE type, double val){
+    retVal->type = type;
+    retVal->val = val;
+
+    return *retVal;
+}
+
+//RET_VAL resolveDualOp(FUNC_AST_NODE *funcAstNode, double (*f)(double)){
+//    RET_VAL op2 = eval(funcAstNode->op2);
+//
+//    RET_VAL result = {INT_TYPE, NAN};
+//
+//    if(op1.type == DOUBLE_TYPE || op2.type == DOUBLE_TYPE){
+//        result.type = DOUBLE_TYPE;
+//        result.val = (*f);
+//    }
+//    else{
+//        result.val = round((*f));
+//    }
+//    return result;
+//}
