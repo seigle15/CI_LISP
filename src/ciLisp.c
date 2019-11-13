@@ -202,20 +202,66 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
 
     RET_VAL op1 = eval(funcNode->op1);
+    RET_VAL op2 = eval(funcNode->op2);;
+//    if(funcNode->op2->data.number.val != NAN){
+//
+//    }
+
     switch (funcNode->oper){
         case NEG_OPER :
-            result = resolveOp(op1.type, -op1.val);
+            result = resolveOneOp(op1.type, -op1.val);
             break;
         case ABS_OPER:
-            resolveOp(op1.type, fabs(op1.val));
+            result = resolveOneOp(op1.type, fabs(op1.val));
             break;
         case EXP_OPER:
-            resolveOp(op1.type, exp(op1.val));
+            result = resolveOneOp(op1.type, exp(op1.val));
             break;
-
+        case SQRT_OPER:
+            result = resolveOneOp(op1.type, sqrt(op1.val));
+            break;
+        case SUB_OPER:
+            result = resolveTwoOp(op1.type, op2.type, op1.val - op2.val);
+            break;
         case ADD_OPER:
-            //result = resolveDualOp(funcNode, *(+));
+            result = resolveTwoOp(op1.type, op2.type, op1.val + op2.val);
+            break;
+        case MULT_OPER:
+            result = resolveTwoOp(op1.type, op2.type, op1.val * op2.val);
+            break;
+        case DIV_OPER:
+            if(op2.val != 0) {
+                result = resolveTwoOp(op1.type, op2.type, op1.val / op2.val);
+            }
+            break;
+        case REMAINDER_OPER:
+            if(op2.val != 0) {
+                result = resolveTwoOp(op1.type, op2.type, remainder(op1.val, op2.val));
+            }
+            break;
+        case LOG_OPER:
+            result = resolveOneOp(op1.type, log(op1.val));
+            break;
+        case POW_OPER:
+            result = resolveTwoOp(op1.type, op2.type,  pow(op1.val, op2.val));
+            break;
+        case MAX_OPER:
+            result = resolveTwoOp(op1.type, op2.type,  fmax(op1.val, op2.val));
+            break;
+        case MIN_OPER:
+            result = resolveTwoOp(op1.type, op2.type,  fmin(op1.val, op2.val));
+            break;
+        case EXP2_OPER:
+            result = resolveOneOp(op1.type, exp2(op1.val));
+            break;
+        case CBRT_OPER:
+            result = resolveOneOp(op1.type, cbrt(op1.val));
+            break;
+        case HYPOT_OPER:
+            result = resolveTwoOp(op1.type, op2.type,  hypot(op1.val, op2.val));
+            break;
         default:
+            printf("Invalid function or not implemented yet...");
             break;
     }
 
@@ -225,7 +271,6 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
 {
-    // TODO print the type and value of the value passed in.
     if (val.type == INT_TYPE){
         //int printVal =
         printf("INT_TYPE: %.f", round(val.val));
@@ -236,7 +281,10 @@ void printRetVal(RET_VAL val)
 
 }
 
-RET_VAL resolveOp(NUM_TYPE type, double val){
+
+/*  HELPER FUNCTIONS  */
+
+RET_VAL resolveOneOp(NUM_TYPE type, double val){
     RET_VAL retVal = {INT_TYPE, NAN};
     retVal.type = type;
     retVal.val = val;
@@ -244,3 +292,16 @@ RET_VAL resolveOp(NUM_TYPE type, double val){
     return retVal;
 }
 
+RET_VAL resolveTwoOp(NUM_TYPE type1, NUM_TYPE type2, double val){
+    RET_VAL retVal = {INT_TYPE, NAN};
+    if(type1 == DOUBLE_TYPE || type2 == DOUBLE_TYPE){
+        retVal.type = DOUBLE_TYPE;
+        retVal.val = val;
+    }
+    else{
+        retVal.type = INT_TYPE;
+        retVal.val = round(val);
+    }
+
+    return retVal;
+}

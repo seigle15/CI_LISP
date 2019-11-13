@@ -104,6 +104,7 @@ void printRetVal(RET_VAL val);
 
 /*  HELPER FUNCTIONS  */
 
-RET_VAL resolveOp(NUM_TYPE type, double val);
+RET_VAL resolveOneOp(NUM_TYPE type, double val);
+RET_VAL resolveTwoOp(NUM_TYPE type1, NUM_TYPE type2, double val);
 
 #endif
