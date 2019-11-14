@@ -80,27 +80,48 @@ typedef struct {
     struct ast_node *op2;
 } FUNC_AST_NODE;
 
+
+typedef struct sym_table_node{
+    NUM_TYPE val_type;
+    char *ident;
+    struct ast_node *val;
+    struct sym_table_node *next;
+}SYMBOL_TABLE_NODE;
+
+
+typedef struct symbol_ast_node {
+    char *ident;
+} SYMBOL_AST_NODE;
+
 // Generic Abstract Syntax Tree node. Stores the type of node,
 // and reference to the corresponding specific node (initially a number or function call).
 typedef struct ast_node {
     AST_NODE_TYPE type;
+    SYMBOL_TABLE_NODE  *table;
     struct ast_node *parent;
-    struct sym_table_node *table;
     union {
         NUM_AST_NODE number;
         FUNC_AST_NODE function;
+        SYMBOL_AST_NODE symbol;
     } data;
 } AST_NODE;
 
-typedef struct sym_table_node{
-    char *sym;
-    AST_NODE *val;
-    struct sym_table_node *next;
-}SYM_TABLE_NODE;
+
 
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
 
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
+
+/*TASK 2 functions */
+
+AST_NODE *createSymbolNode(char *ident);
+
+AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
+
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node);
+
+SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode);
+
 
 void freeNode(AST_NODE *node);
 
@@ -109,6 +130,7 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
 
 void printRetVal(RET_VAL val);
+
 
 
 /*  HELPER FUNCTIONS  */

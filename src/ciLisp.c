@@ -282,7 +282,45 @@ void printRetVal(RET_VAL val)
 }
 
 
+/*TASK 2 functions */
 
+AST_NODE *createSymbolNode(char *ident){
+    AST_NODE *node;
+    size_t nodeSize;
+
+    // allocate space for the fixed sie and the variable part (union)
+    nodeSize = sizeof(AST_NODE);
+    if ((node = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
+    node
+
+    return node;
+}
+
+AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
+
+    return node;
+}
+
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node){
+    SYMBOL_TABLE_NODE *symbolTableNode;
+    size_t nodeSize;
+
+    nodeSize = sizeof(SYMBOL_TABLE_NODE);
+    if ((symbolTableNode = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
+
+
+
+    return symbolTableNode;
+}
+
+SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode){
+
+    return newNode;
+}
 
 /*  HELPER FUNCTIONS  */
 
