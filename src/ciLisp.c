@@ -271,6 +271,10 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
 {
+
+//    switch(val.type){
+//        case :
+//    }
     if (val.type == INT_TYPE){
         //int printVal =
         printf("INT_TYPE: %.f", round(val.val));
@@ -285,6 +289,7 @@ void printRetVal(RET_VAL val)
 /*TASK 2 functions */
 
 AST_NODE *createSymbolNode(char *ident){
+    printf("Creating Symbol");
     AST_NODE *node;
     size_t nodeSize;
 
@@ -293,7 +298,10 @@ AST_NODE *createSymbolNode(char *ident){
     if ((node = calloc(nodeSize, 1)) == NULL)
         yyerror("Memory allocation failed!");
 
-    node
+    node->type = SYMBOL_NODE_TYPE;
+    node->data.symbol.ident = malloc(sizeof(ident) + 1);
+    strcmp(node->data.symbol.ident, ident);
+
 
     return node;
 }
