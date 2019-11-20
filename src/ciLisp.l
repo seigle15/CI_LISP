@@ -9,8 +9,7 @@
 digit [0-9]
 int [+-]?{digit}+
 double [+-]?{digit}+(\.{digit}+)?
-letter [a-zA-z]
-symbol {letter}+
+symbol [a-zA-Z]+
 func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"
 
 %%

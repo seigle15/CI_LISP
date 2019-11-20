@@ -67,11 +67,6 @@ typedef struct {
     double val;
 } NUM_AST_NODE;
 
-// Values returned by eval function will be numbers with a type.
-// They have the same structure as a NUM_AST_NODE.
-// The line below allows us to give this struct another name for readability.
-typedef NUM_AST_NODE RET_VAL;
-
 // Node to store a function call with its inputs
 typedef struct {
     OPER_TYPE oper;
@@ -105,6 +100,11 @@ typedef struct ast_node {
         SYMBOL_AST_NODE symbol;
     } data;
 } AST_NODE;
+
+// Values returned by eval function will be numbers with a type.
+// They have the same structure as a NUM_AST_NODE.
+// The line below allows us to give this struct another name for readability.
+typedef AST_NODE RET_VAL;
 
 
 
