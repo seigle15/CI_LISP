@@ -112,6 +112,10 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
 
 /*TASK 2 functions */
 
+RET_VAL evalSymbolNode(AST_NODE *node);
+
+SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr);
+
 AST_NODE *createSymbolNode(char *ident);
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);

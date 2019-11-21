@@ -65,7 +65,6 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
     switch (type){
         case INT_TYPE:
             node->data.number.type = INT_TYPE;
-
             node->data.number.val = floor(value);
             break;
         case DOUBLE_TYPE:
@@ -103,7 +102,6 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     // The funcName will be a string identifier for which space should be allocated in the tokenizer.
     // For CUSTOM_OPER functions, you should simply assign the "ident" pointer to the passed in funcName.
     // For functions other than CUSTOM_OPER, you should free the funcName after you're assigned the OPER_TYPE.
-
 
     node->type = FUNC_NODE_TYPE;
     node->data.function.oper = resolveFunc(funcName);
@@ -166,7 +164,8 @@ RET_VAL eval(AST_NODE *node)
             result = evalFuncNode(&node->data.function);
             break;
         case SYMBOL_NODE_TYPE:
-            printf("Resolving Symbol ");
+            //printf("Resolving Symbol ");
+            result = evalSymbolNode(node);
             break;
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
@@ -276,14 +275,6 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
 {
-
-//    switch(val.type){
-//        case SYMBOL_NODE_TYPE:
-//            printf("SYMBOL: %s", val..symbol.ident);
-//            break;
-//        case :
-//    }
-
     if (val.type == INT_TYPE){
         //int printVal =
         printf("INT_TYPE: %.f", round(val.val ));
@@ -294,12 +285,37 @@ void printRetVal(RET_VAL val)
 
 }
 
-
 /*TASK 2 functions */
 
-//RET_VAL evalSymbol(AST_NODE *node){
-//
-//}
+//test (( let (x 1)) x)
+
+RET_VAL evalSymbolNode(AST_NODE *node){
+    if(node == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+    SYMBOL_TABLE_NODE *val = findSymbol(node->table->ident, node);
+
+    if(val == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+
+    return eval(val->val);
+}
+
+SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
+    if(s_expr == NULL){
+        return NULL;
+    }
+    SYMBOL_TABLE_NODE *node = s_expr->table;
+
+    while (node != NULL && strcmp(ident, node->ident) != 0){
+        node = node->next;
+    }
+    if(node == NULL){
+        node = findSymbol(ident, s_expr->parent);
+    }
+    return node;
+}
 
 AST_NODE *createSymbolNode(char *ident){
     AST_NODE *node;
@@ -337,13 +353,10 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node){
     if ((symbolTableNode = calloc(nodeSize, 1)) == NULL)
         yyerror("Memory allocation failed!");
 
-    symbolTableNode->ident = malloc(sizeof(ident)+1);
-    strcmp(symbolTableNode->ident, ident);
-
-    eval(node);
+    symbolTableNode->ident = ident;
 
     symbolTableNode->val_type = node->data.number.type;
-    symbolTableNode->val->data.number.val = node->data.number.val;
+    symbolTableNode->val= node;
 
     return symbolTableNode;
 }
