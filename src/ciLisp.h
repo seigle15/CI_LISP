@@ -75,6 +75,10 @@ typedef struct {
     struct ast_node *op2;
 } FUNC_AST_NODE;
 
+// Values returned by eval function will be numbers with a type.
+// They have the same structure as a NUM_AST_NODE.
+// The line below allows us to give this struct another name for readability.
+typedef NUM_AST_NODE RET_VAL;
 
 typedef struct sym_table_node{
     NUM_TYPE val_type;
@@ -100,12 +104,6 @@ typedef struct ast_node {
         SYMBOL_AST_NODE symbol;
     } data;
 } AST_NODE;
-
-// Values returned by eval function will be numbers with a type.
-// They have the same structure as a NUM_AST_NODE.
-// The line below allows us to give this struct another name for readability.
-typedef AST_NODE RET_VAL;
-
 
 
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
