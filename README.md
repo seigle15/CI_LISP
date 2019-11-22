@@ -1,6 +1,6 @@
-## CI_LISP
+# CI_LISP
 Sean Eigle
-# Notes about TASK 1: 
+## Notes about TASK 1: 
 everything up to "hypot" function has been implented and is working propertly including the "dot" error in the ciLisp.l file
 
 TASK #1 test run
@@ -18,7 +18,7 @@ INT_TYPE: nan
 
 Process finished with exit code 0
 
-# Note about TASK 2:
+## Note about TASK 2:
 
 \> (add ((let (abc 1)) (sub 3 abc)) 4)
  
