@@ -80,11 +80,11 @@ typedef struct {
 // The line below allows us to give this struct another name for readability.
 typedef NUM_AST_NODE RET_VAL;
 
-typedef struct sym_table_node{
+typedef struct symbol_table_node{
     NUM_TYPE val_type;
     char *ident;
     struct ast_node *val;
-    struct sym_table_node *next;
+    struct symbol_table_node *next;
 }SYMBOL_TABLE_NODE;
 
 
@@ -107,33 +107,21 @@ typedef struct ast_node {
 
 
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
-
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
-
-/*TASK 2 functions */
-
-RET_VAL evalSymbolNode(AST_NODE *node);
-
-SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr);
-
 AST_NODE *createSymbolNode(char *ident);
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node);
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node);
-
 SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode);
-
-
 void freeNode(AST_NODE *node);
 
 RET_VAL eval(AST_NODE *node);
 RET_VAL evalNumNode(NUM_AST_NODE *numNode);
+RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
 
 void printRetVal(RET_VAL val);
-
-
 
 /*  HELPER FUNCTIONS  */
 

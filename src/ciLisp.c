@@ -106,13 +106,11 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     node->type = FUNC_NODE_TYPE;
     node->data.function.oper = resolveFunc(funcName);
     node->data.function.op1 = op1;
-    op1->parent = node;
+    node->data.function.op1->parent = node;
     if(op2 != NULL){
         node->data.function.op2 = op2;
-        op2->parent = node;
+        node->data.function.op2->parent = node;
     }
-    evalFuncNode(&node->data.function);
-
     return node;
 }
 
@@ -285,23 +283,6 @@ void printRetVal(RET_VAL val)
 
 }
 
-/*TASK 2 functions */
-
-//test (( let (x 1)) x)
-
-RET_VAL evalSymbolNode(AST_NODE *node){
-    if(node == NULL){
-        return (RET_VAL){INT_TYPE, NAN};
-    }
-    SYMBOL_TABLE_NODE *val = findSymbol(node->table->ident, node);
-
-    if(val == NULL){
-        return (RET_VAL){INT_TYPE, NAN};
-    }
-
-    return eval(val->val);
-}
-
 SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     if(s_expr == NULL){
         return NULL;
@@ -317,6 +298,23 @@ SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     return node;
 }
 
+RET_VAL evalSymbolNode(AST_NODE *node){
+    if(node == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+    AST_NODE *temp = node;
+    while (temp->table == NULL){
+        temp = temp->parent;
+    }
+    SYMBOL_TABLE_NODE *val = findSymbol(temp->table->ident, node);
+
+    if(val == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+
+    return eval(val->val);
+}
+
 AST_NODE *createSymbolNode(char *ident){
     AST_NODE *node;
     size_t nodeSize;
@@ -329,7 +327,6 @@ AST_NODE *createSymbolNode(char *ident){
     node->type = SYMBOL_NODE_TYPE;
     node->data.symbol.ident = malloc(sizeof(ident) + 1);
     strcmp(node->data.symbol.ident, ident);
-
 
     return node;
 }
@@ -363,7 +360,7 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node){
 
 SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode){
 
-    if(!newNode){
+    if(newNode == NULL){
         return head;
     }
     newNode->next = head;

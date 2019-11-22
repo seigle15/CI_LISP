@@ -52,10 +52,14 @@ s_expr:
         $$ = NULL;
     };
 
-let_elem:
-        LPAREN SYMBOL s_expr RPAREN{
-        $$ = createSymbolTableNode($2, $3);
-      };
+let_section:
+    /* EMPTY */ {
+        $$ = NULL;
+    }
+    | LPAREN let_list RPAREN {
+        $$ = $2;
+    };
+
 let_list:
         LET let_elem {
           $$ = $2
@@ -64,10 +68,10 @@ let_list:
             $$ = addToSymbolTable($1, $2);
         };
 
-let_section:
-       LPAREN let_list RPAREN{
-        $$ = $2;
-       };
+let_elem:
+        LPAREN SYMBOL s_expr RPAREN{
+        $$ = createSymbolTableNode($2, $3);
+      };
 
 number:
     INT {
