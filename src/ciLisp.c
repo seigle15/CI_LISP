@@ -106,6 +106,7 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     node->type = FUNC_NODE_TYPE;
     node->data.function.oper = resolveFunc(funcName);
     node->data.function.op1 = op1;
+    //if()
     node->data.function.op1->parent = node;
     if(op2 != NULL){
         node->data.function.op2 = op2;
@@ -262,6 +263,8 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
         case HYPOT_OPER:
             result = resolveTwoOp(op1.type, op2.type,  hypot(op1.val , op2.val ));
             break;
+        case PRINT_OPER:
+            result = printExpr(funcNode);
         default:
             printf("Invalid function or not implemented yet...");
             break;
@@ -269,6 +272,7 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 
     return result;
 }
+
 
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
@@ -349,6 +353,23 @@ AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
     return node;
 }
 
+
+NUM_TYPE checkType(char *type, AST_NODE *data, char *var){
+    if(type != NULL && strcmp(type, "double") == 0){
+        data->data.number.type = DOUBLE_TYPE;
+        return DOUBLE_TYPE;
+    }
+    else if (type != NULL && strcmp(type, "int") == 0){
+        data->data.number.type = INT_TYPE;
+        if(data->data.number.val != (long)data->data.number.val){
+            printf("WARNING: precision loss in the assignment for variable %s\n", var);
+            data->data.number.val = round(data->data.number.val);
+        }
+        return INT_TYPE;
+    }
+    return NO_TYPE;
+}
+
 SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
     SYMBOL_TABLE_NODE *symbolTableNode;
     size_t nodeSize;
@@ -359,19 +380,9 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type
 
     symbolTableNode->ident = ident;
     symbolTableNode->val_type = node->data.number.type;
-    symbolTableNode->val= node;
+    symbolTableNode->val = node;
 
-    if(type != NULL && strcmp(type, "double") == 0){
-        symbolTableNode->val_type = DOUBLE_TYPE;
-    }
-    else if(type != NULL &&  strcmp(type, "int") == 0){
-        if(symbolTableNode->val->data.number.val / symbolTableNode->val->data.number.val != 1){
-            printf("WARNING: precision loss in the assignment for variable %s", symbolTableNode->ident);
-            symbolTableNode->val->data.number.val = round(symbolTableNode->val->data.number.val);
-        }
-        symbolTableNode->val_type = INT_TYPE;
-    }
-
+    symbolTableNode->val_type = checkType(type, symbolTableNode->val, symbolTableNode->ident);
     return symbolTableNode;
 }
 
@@ -382,6 +393,17 @@ SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *
     }
     newNode->next = head;
     return newNode;
+}
+
+
+
+RET_VAL printExpr(FUNC_AST_NODE *funcNode){
+    if (!funcNode)
+        return (RET_VAL){INT_TYPE, NAN};
+
+    RET_VAL result = {INT_TYPE, NAN};
+
+    return result;
 }
 
 /*  HELPER FUNCTIONS  */
@@ -402,7 +424,8 @@ RET_VAL resolveTwoOp(NUM_TYPE type1, NUM_TYPE type2, double val){
     }
     else{
         retVal.type = INT_TYPE;
-        retVal.val = round(val);
+
+        retVal.val = floor(val);
     }
 
     return retVal;

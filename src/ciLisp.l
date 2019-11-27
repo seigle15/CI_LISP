@@ -10,7 +10,7 @@ digit [0-9]
 int_literal [+-]?{digit}+
 double_literal [+-]?{digit}+(\.{digit}+)?
 symbol [a-zA-Z]+
-func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"
+func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"|"print"
 type "double"|"int"
 %%
 
