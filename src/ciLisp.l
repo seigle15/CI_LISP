@@ -7,20 +7,20 @@
 %}
 
 digit [0-9]
-int [+-]?{digit}+
-double [+-]?{digit}+(\.{digit}+)?
+int_literal [+-]?{digit}+
+double_literal [+-]?{digit}+(\.{digit}+)?
 symbol [a-zA-Z]+
 func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"max"|"min"|"hypot"
-
+type "double"|"int"
 %%
 
-{int} {
+{int_literal} {
     yylval.dval = strtod(yytext, NULL);
     fprintf(stderr, "lex: INT dval = %lf\n", yylval.dval);
     return INT;
 }
 
-{double} {
+{double_literal} {
     yylval.dval = strtod(yytext, NULL);
     fprintf(stderr, "lex: DOUBLE dval = %lf\n", yylval.dval);
     return DOUBLE;
@@ -41,6 +41,14 @@ func "neg"|"abs"|"exp"|"sqrt"|"add"|"sub"|"mult"|"div"|"remainder"|"log"|"pow"|"
     fprintf(stderr, "lex: FUNC sval = %s\n", yylval.sval);
     return FUNC;
     }
+
+{type} {
+    yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char) + 1);
+    strcpy(yylval.sval, yytext);
+    fprintf(stderr, "lex: TYPE sval = %s\n", yylval.sval);
+    return TYPE;
+    }
+
 
 "(" {
     fprintf(stderr, "lex: LPAREN\n");

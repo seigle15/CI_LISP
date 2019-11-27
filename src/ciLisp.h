@@ -57,6 +57,7 @@ typedef enum {
 
 // Types of numeric values
 typedef enum {
+    NO_TYPE,
     INT_TYPE,
     DOUBLE_TYPE
 } NUM_TYPE;
@@ -74,6 +75,8 @@ typedef struct {
     struct ast_node *op1;
     struct ast_node *op2;
 } FUNC_AST_NODE;
+
+
 
 // Values returned by eval function will be numbers with a type.
 // They have the same structure as a NUM_AST_NODE.
@@ -109,7 +112,7 @@ typedef struct ast_node {
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
 AST_NODE *createSymbolNode(char *ident);
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node);
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type);
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
 

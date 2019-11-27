@@ -285,6 +285,7 @@ void printRetVal(RET_VAL val)
 
 SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     if(s_expr == NULL){
+        printf("Symbol Not Declared: %s\n", ident);
         return NULL;
     }
     SYMBOL_TABLE_NODE *node = s_expr->table;
@@ -302,18 +303,16 @@ RET_VAL evalSymbolNode(AST_NODE *node){
     if(node == NULL){
         return (RET_VAL){INT_TYPE, NAN};
     }
-    AST_NODE *temp = node;
-    while (temp->table == NULL){
-        temp = temp->parent;
-    }
-    SYMBOL_TABLE_NODE *val = findSymbol(temp->table->ident, node);
+    SYMBOL_TABLE_NODE *val = findSymbol(node->data.symbol.ident, node);
 
     if(val == NULL){
         return (RET_VAL){INT_TYPE, NAN};
     }
 
+
     return eval(val->val);
 }
+
 
 AST_NODE *createSymbolNode(char *ident){
     AST_NODE *node;
@@ -326,13 +325,21 @@ AST_NODE *createSymbolNode(char *ident){
 
     node->type = SYMBOL_NODE_TYPE;
     node->data.symbol.ident = malloc(sizeof(ident) + 1);
-    strcmp(node->data.symbol.ident, ident);
+    strcpy(node->data.symbol.ident, ident);
 
     return node;
 }
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
 
+    if(symbolNode == NULL){
+        printf("Error Symbol not declared ");
+        return node;
+    }
+    if(node == NULL){
+        printf("Error no s_expression");
+        return node;
+    }
     node->table = symbolNode;
     SYMBOL_TABLE_NODE *temp = symbolNode;
     while(temp != NULL){
@@ -342,7 +349,7 @@ AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
     return node;
 }
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node){
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
     SYMBOL_TABLE_NODE *symbolTableNode;
     size_t nodeSize;
 
@@ -351,9 +358,19 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node){
         yyerror("Memory allocation failed!");
 
     symbolTableNode->ident = ident;
-
     symbolTableNode->val_type = node->data.number.type;
     symbolTableNode->val= node;
+
+    if(type != NULL && strcmp(type, "double") == 0){
+        symbolTableNode->val_type = DOUBLE_TYPE;
+    }
+    else if(type != NULL &&  strcmp(type, "int") == 0){
+        if(symbolTableNode->val->data.number.val / symbolTableNode->val->data.number.val != 1){
+            printf("WARNING: precision loss in the assignment for variable %s", symbolTableNode->ident);
+            symbolTableNode->val->data.number.val = round(symbolTableNode->val->data.number.val);
+        }
+        symbolTableNode->val_type = INT_TYPE;
+    }
 
     return symbolTableNode;
 }
