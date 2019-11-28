@@ -27,3 +27,26 @@ digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 
 (print ( (let (a 3) ) a))
+
+program ::= s-expr EOL
+
+s-expr ::= quit | number | symbol | f-expr | ( let_section s_expr )
+
+f-expr ::= ( func s_expr_list )
+
+s_expr_list ::= s_expr s_expr_list | s_expr | <empty>
+
+func ::= neg|abs|exp|sqrt|add|sub|mult|div|remainder|log|pow|max|min|exp2|cbrt|hypot|print
+
+let_section ::= <empty> | ( let let_list )
+
+let_list ::= let_elem | let_list
+let_elem let_elem ::= ( [type] symbol s_expr )
+
+type ::= int | double
+symbol ::= letter+
+letter ::= [a-zA-Z]
+number ::= [type] int_literal |[type] double_literal
+int_literal ::= [+|-] digit+
+double_literal ::= [+|-] digit+ . digit*
+digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
