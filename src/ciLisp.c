@@ -106,8 +106,12 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
     node->type = FUNC_NODE_TYPE;
     node->data.function.oper = resolveFunc(funcName);
     node->data.function.op1 = op1;
-    //if()
-    node->data.function.op1->parent = node;
+
+
+    if(node->data.function.op1 != NULL){
+        node->data.function.op1->parent = node;
+    }
+
     if(op2 != NULL){
         node->data.function.op2 = op2;
         node->data.function.op2->parent = node;
@@ -207,7 +211,7 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
 
     RET_VAL op1 = eval(funcNode->op1);
-    RET_VAL op2 = eval(funcNode->op2);;
+    RET_VAL op2 = eval(funcNode->op2);
     //op1...type;
 
     switch (funcNode->oper){
@@ -264,7 +268,8 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
             result = resolveTwoOp(op1.type, op2.type,  hypot(op1.val , op2.val ));
             break;
         case PRINT_OPER:
-            result = printExpr(funcNode);
+            result = printExpr(funcNode->op1, op1);
+            break;
         default:
             printf("Invalid function or not implemented yet...");
             break;
@@ -313,10 +318,8 @@ RET_VAL evalSymbolNode(AST_NODE *node){
         return (RET_VAL){INT_TYPE, NAN};
     }
 
-
     return eval(val->val);
 }
-
 
 AST_NODE *createSymbolNode(char *ident){
     AST_NODE *node;
@@ -336,14 +339,15 @@ AST_NODE *createSymbolNode(char *ident){
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
 
-    if(symbolNode == NULL){
-        printf("Error Symbol not declared ");
-        return node;
-    }
     if(node == NULL){
-        printf("Error no s_expression");
+        printf("Error: invalid or no s_expression\n");
         return node;
     }
+    if(symbolNode == NULL){
+        printf("Invalid Expression or Symbol\n");
+        return node;
+    }
+
     node->table = symbolNode;
     SYMBOL_TABLE_NODE *temp = symbolNode;
     while(temp != NULL){
@@ -352,7 +356,6 @@ AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
     }
     return node;
 }
-
 
 NUM_TYPE checkType(char *type, AST_NODE *data, char *var){
     if(type != NULL && strcmp(type, "double") == 0){
@@ -395,13 +398,29 @@ SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *
     return newNode;
 }
 
-
-
-RET_VAL printExpr(FUNC_AST_NODE *funcNode){
-    if (!funcNode)
+RET_VAL printExpr(AST_NODE *node, RET_VAL op1){
+    if (!node)
         return (RET_VAL){INT_TYPE, NAN};
 
     RET_VAL result = {INT_TYPE, NAN};
+
+    switch (node->type){
+        case NUM_NODE_TYPE:
+            printf("Number: %f\n", op1.val);
+            result.type = op1.type;
+            result.val = op1.val;
+            break;
+        case FUNC_NODE_TYPE:
+            printf("Function %s Evaluation: %f\n", funcNames[node->data.function.oper], op1.val);
+            result.type = op1.type;
+            result.val = op1.val;
+            break;
+        case SYMBOL_NODE_TYPE:
+            printf("Symbol: %s = %f \n", node->data.symbol.ident, op1.val);
+            result.type = op1.type;
+            result.val = op1.val;
+            break;
+    }
 
     return result;
 }

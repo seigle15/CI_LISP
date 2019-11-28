@@ -124,7 +124,7 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode);
 RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
 
-RET_VAL printExpr(FUNC_AST_NODE *funcNode);
+RET_VAL printExpr(AST_NODE *node, RET_VAL op1);
 
 void printRetVal(RET_VAL val);
 

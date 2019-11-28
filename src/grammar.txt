@@ -8,7 +8,7 @@ s-expr ::= quit
 
 f-expr ::= ( func s-expr ) | ( func s-expr s-expr )
 
-func ::= neg|abs|exp|sqrt|add|sub|mult|div|remainder|log|pow|max|min|exp2|cbrt|hypot
+func ::= neg|abs|exp|sqrt|add|sub|mult|div|remainder|log|pow|max|min|exp2|cbrt|hypot|print
 
 let_section ::= <empty> | ( let let_list )
 
@@ -24,3 +24,6 @@ number ::= [type] int_literal | [type] double_literal
 int_literal ::= [+|-] digit+
 double_literal ::= [+|-] digit+ . digit*
 digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+
+(print ( (let (a 3) ) a))
