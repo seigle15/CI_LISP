@@ -86,7 +86,7 @@ AST_NODE *createNumberNode(double value, NUM_TYPE type)
 //      - An OPER_TYPE (the enum identifying the specific function being called)
 //      - 2 AST_NODEs, the operands
 // SEE: AST_NODE, FUNC_AST_NODE, AST_NODE_TYPE.
-AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
+AST_NODE *createFunctionNode(char *funcName, AST_NODE *opList)
 {
     AST_NODE *node;
     size_t nodeSize;
@@ -105,17 +105,13 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2)
 
     node->type = FUNC_NODE_TYPE;
     node->data.function.oper = resolveFunc(funcName);
-    node->data.function.op1 = op1;
+    node->data.function.opList = opList;
 
 
-    if(node->data.function.op1 != NULL){
-        node->data.function.op1->parent = node;
+    if(node->data.function.opList != NULL){
+        node->data.function.opList->parent = node;
     }
 
-    if(op2 != NULL){
-        node->data.function.op2 = op2;
-        node->data.function.op2->parent = node;
-    }
     return node;
 }
 
@@ -131,8 +127,7 @@ void freeNode(AST_NODE *node)
     if (node->type == FUNC_NODE_TYPE)
     {
         // Recursive calls to free child nodes
-        freeNode(node->data.function.op1);
-        freeNode(node->data.function.op2);
+        freeNode(node->data.function.opList->next);
 
         // Free up identifier string if necessary
         if (node->data.function.oper == CUSTOM_OPER)
@@ -202,73 +197,82 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode)
 
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 {
-    if (!funcNode)
+    if (!funcNode){
+        printf("Function not specified \n");
         return (RET_VAL){INT_TYPE, NAN};
-
+    }
     RET_VAL result = {INT_TYPE, NAN};
+
+
 
     // TODO populate result with the result of running the function on its operands.
     // SEE: AST_NODE, AST_NODE_TYPE, FUNC_AST_NODE
 
-    RET_VAL op1 = eval(funcNode->op1);
-    RET_VAL op2 = eval(funcNode->op2);
     //op1...type;
+    //funcNode->opList
 
     switch (funcNode->oper){
         case NEG_OPER :
-            result = resolveOneOp(op1.type, -op1.val );
+            result = resolveOneOp(funcNode->opList, -funcNode->opList->data.number.val);
             break;
         case ABS_OPER:
-            result = resolveOneOp(op1.type, fabs(op1.val ));
+            result = resolveOneOp(funcNode->opList, fabs(funcNode->opList->data.number.val));
             break;
         case EXP_OPER:
-            result = resolveOneOp(op1.type, exp(op1.val ));
+            result = resolveOneOp(funcNode->opList, exp(funcNode->opList->data.number.val));
             break;
         case SQRT_OPER:
-            result = resolveOneOp(op1.type, sqrt(op1.val ));
+            result = resolveOneOp(funcNode->opList, sqrt(funcNode->opList->data.number.val));
             break;
         case SUB_OPER:
-            result = resolveTwoOp(op1.type, op2.type, op1.val  - op2.val );
+            result = resolveTwoOp(funcNode->oper, funcNode->opList,  funcNode->opList->data.number.val -
+                                    funcNode->opList->next->data.number.val);
             break;
         case ADD_OPER:
-            result = resolveTwoOp(op1.type, op2.type, op1.val  + op2.val );
+            result = resolveMultOP(funcNode->oper, funcNode->opList);
             break;
         case MULT_OPER:
-            result = resolveTwoOp(op1.type, op2.type, op1.val  * op2.val );
+            result = resolveMultOP(funcNode->oper, funcNode->opList);
             break;
         case DIV_OPER:
-            if(op2.val  != 0) {
-                result = resolveTwoOp(op1.type, op2.type, op1.val  / op2.val );
+            if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
+                result = resolveTwoOp(funcNode->oper, funcNode->opList,  funcNode->opList->data.number.val /
+                                      funcNode->opList->next->data.number.val);
             }
             break;
         case REMAINDER_OPER:
-            if(op2.val  != 0) {
-                result = resolveTwoOp(op1.type, op2.type, remainder(op1.val , op2.val ));
+            if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
+                result = resolveTwoOp(funcNode->oper, funcNode->opList,  remainder(funcNode->opList->data.number.val ,
+                                                                             funcNode->opList->next->data.number.val));
             }
             break;
         case LOG_OPER:
-            result = resolveOneOp(op1.type, log(op1.val ));
+            result = resolveOneOp(funcNode->opList, log(funcNode->opList->data.number.val));
             break;
         case POW_OPER:
-            result = resolveTwoOp(op1.type, op2.type,  pow(op1.val , op2.val ));
+            result = resolveTwoOp(funcNode->oper, funcNode->opList,  pow(funcNode->opList->data.number.val ,
+                                                                         funcNode->opList->next->data.number.val));
             break;
         case MAX_OPER:
-            result = resolveTwoOp(op1.type, op2.type,  fmax(op1.val , op2.val ));
+            result = resolveTwoOp(funcNode->oper, funcNode->opList,  fmax(funcNode->opList->data.number.val ,
+                                                                         funcNode->opList->next->data.number.val));
             break;
         case MIN_OPER:
-            result = resolveTwoOp(op1.type, op2.type,  fmin(op1.val , op2.val ));
+            result = resolveTwoOp(funcNode->oper, funcNode->opList,  fmin(funcNode->opList->data.number.val ,
+                                                                         funcNode->opList->next->data.number.val));
             break;
         case EXP2_OPER:
-            result = resolveOneOp(op1.type, exp2(op1.val ));
+            result = resolveOneOp(funcNode->opList, exp2(funcNode->opList->data.number.val));
             break;
         case CBRT_OPER:
-            result = resolveOneOp(op1.type, cbrt(op1.val ));
+            result = resolveOneOp(funcNode->opList, cbrt(funcNode->opList->data.number.val));
             break;
         case HYPOT_OPER:
-            result = resolveTwoOp(op1.type, op2.type,  hypot(op1.val , op2.val ));
+            result = resolveTwoOp(funcNode->oper, funcNode->opList,  hypot(funcNode->opList->data.number.val ,
+                                funcNode->opList->next->data.number.val));
             break;
         case PRINT_OPER:
-            result = printExpr(funcNode->op1, op1);
+            //result = printExpr(funcNode->op1, op1);
             break;
         default:
             printf("Invalid function or not implemented yet...");
@@ -276,6 +280,73 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
     }
 
     return result;
+}
+
+RET_VAL resolveOneOp(AST_NODE *op, double val){
+    RET_VAL retVal = {INT_TYPE, NAN};
+    retVal.type = op->data.number.type;
+    retVal.val  = op->data.number.val;
+
+    return retVal;
+}
+
+RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op, double val){
+    RET_VAL retVal = {INT_TYPE, NAN};
+    if(op->next == NULL){
+        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
+        return retVal;
+    }
+    if(op->data.number.type == DOUBLE_TYPE || op->next->data.number.type == DOUBLE_TYPE){
+        retVal.type = DOUBLE_TYPE;
+        retVal.val = val;
+    }
+    else{
+        retVal.type = INT_TYPE;
+        retVal.val = round(val);
+    }
+    return retVal;
+}
+
+RET_VAL resolveMultOP(OPER_TYPE type, AST_NODE *opList){
+    RET_VAL retVal = {INT_TYPE, NAN};
+    if(opList->next == NULL ){
+        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
+        return retVal;
+    }
+    retVal.val = 0;
+    RET_VAL temp = {INT_TYPE, NAN};
+    AST_NODE *iterator = opList;
+    while (iterator != NULL){
+        if(iterator->type == FUNC_NODE_TYPE){
+            temp = evalFuncNode(&iterator->data.function);
+        }
+        if(iterator->data.number.type == DOUBLE_TYPE){
+            retVal.type = DOUBLE_TYPE;
+        }
+
+        switch (type){
+            case ADD_OPER:
+                retVal.val += iterator->data.number.val;
+                if(temp.val != NAN)
+                    retVal.val += temp.val;
+                break;
+            case MULT_OPER:
+                retVal.val *= iterator->data.number.val;
+                if(temp.val != NAN) retVal.val *= temp.val;
+                break;
+//         case: PRINT_OPER:
+//                printExpr(opList);
+//                break;
+            default:
+                printf("should not be here\n");
+
+        }
+        temp.val = NAN;
+        iterator = iterator->next;
+    }
+
+
+    return retVal;
 }
 
 
@@ -425,27 +496,20 @@ RET_VAL printExpr(AST_NODE *node, RET_VAL op1){
     return result;
 }
 
+
+/*TASK #5 FUNCTIONS */
+AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next){
+    if(node == NULL){
+        return NULL;
+    }
+    if(next == NULL){
+        node->next = NULL;
+        return node;
+    }
+    node->next = next;
+
+    return node;
+}
+
 /*  HELPER FUNCTIONS  */
 
-RET_VAL resolveOneOp(NUM_TYPE type, double val){
-    RET_VAL retVal = {INT_TYPE, NAN};
-    retVal.type = type;
-    retVal.val  = val;
-
-    return retVal;
-}
-
-RET_VAL resolveTwoOp(NUM_TYPE type1, NUM_TYPE type2, double val){
-    RET_VAL retVal = {INT_TYPE, NAN};
-    if(type1 == DOUBLE_TYPE || type2 == DOUBLE_TYPE){
-        retVal.type = DOUBLE_TYPE;
-        retVal.val = val;
-    }
-    else{
-        retVal.type = INT_TYPE;
-
-        retVal.val = floor(val);
-    }
-
-    return retVal;
-}

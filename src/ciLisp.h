@@ -72,10 +72,8 @@ typedef struct {
 typedef struct {
     OPER_TYPE oper;
     char* ident; // only needed for custom functions
-    struct ast_node *op1;
-    struct ast_node *op2;
+    struct ast_node *opList; //now points to a list of operators
 } FUNC_AST_NODE;
-
 
 
 // Values returned by eval function will be numbers with a type.
@@ -106,13 +104,14 @@ typedef struct ast_node {
         FUNC_AST_NODE function;
         SYMBOL_AST_NODE symbol;
     } data;
+    struct ast_node *next;
 } AST_NODE;
 
-
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
-AST_NODE *createFunctionNode(char *funcName, AST_NODE *op1, AST_NODE *op2);
+AST_NODE *createFunctionNode(char *funcName, AST_NODE *opList);
 AST_NODE *createSymbolNode(char *ident);
 SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type);
+AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next);
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
 
@@ -130,7 +129,7 @@ void printRetVal(RET_VAL val);
 
 /*  HELPER FUNCTIONS  */
 
-RET_VAL resolveOneOp(NUM_TYPE type, double val);
-RET_VAL resolveTwoOp(NUM_TYPE type1, NUM_TYPE type2, double val);
-
+RET_VAL resolveOneOp(AST_NODE *op, double val);
+RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op, double val);
+RET_VAL resolveMultOP(OPER_TYPE type, AST_NODE *opList);
 #endif
