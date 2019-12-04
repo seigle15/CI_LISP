@@ -123,13 +123,13 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode);
 RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
 
-RET_VAL printExpr(AST_NODE *node, RET_VAL op1);
+RET_VAL printExpr(AST_NODE *node);
 
 void printRetVal(RET_VAL val);
 
 /*  HELPER FUNCTIONS  */
 
-RET_VAL resolveOneOp(AST_NODE *op, double val);
-RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op, double val);
-RET_VAL resolveMultOP(OPER_TYPE type, AST_NODE *opList);
+RET_VAL resolveOneOp(AST_NODE *op);
+RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op);
+RET_VAL resolveMultOp(OPER_TYPE type, AST_NODE *opList);
 #endif
