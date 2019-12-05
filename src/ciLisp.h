@@ -52,7 +52,8 @@ OPER_TYPE resolveFunc(char *);
 typedef enum {
     NUM_NODE_TYPE,
     FUNC_NODE_TYPE,
-    SYMBOL_NODE_TYPE
+    SYMBOL_NODE_TYPE,
+    COND_NODE_TYPE
 } AST_NODE_TYPE;
 
 // Types of numeric values
@@ -75,7 +76,6 @@ typedef struct {
     struct ast_node *opList; //now points to a list of operators
 } FUNC_AST_NODE;
 
-
 // Values returned by eval function will be numbers with a type.
 // They have the same structure as a NUM_AST_NODE.
 // The line below allows us to give this struct another name for readability.
@@ -93,6 +93,14 @@ typedef struct symbol_ast_node {
     char *ident;
 } SYMBOL_AST_NODE;
 
+
+typedef struct {
+    struct ast_node *cond; // this is the node that checks for non-zero or zero value
+    struct ast_node *trueCond; // to eval if cond is nonzero
+    struct ast_node *falseCond; // to eval if cond is zero
+} COND_AST_NODE;
+
+
 // Generic Abstract Syntax Tree node. Stores the type of node,
 // and reference to the corresponding specific node (initially a number or function call).
 typedef struct ast_node {
@@ -102,6 +110,7 @@ typedef struct ast_node {
     union {
         NUM_AST_NODE number;
         FUNC_AST_NODE function;
+        COND_AST_NODE condition;
         SYMBOL_AST_NODE symbol;
     } data;
     struct ast_node *next;
@@ -128,8 +137,10 @@ RET_VAL printExpr(AST_NODE *node);
 void printRetVal(RET_VAL val);
 
 /*  HELPER FUNCTIONS  */
-
-RET_VAL resolveOneOp(AST_NODE *op);
-RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op);
-RET_VAL resolveMultOp(OPER_TYPE type, AST_NODE *opList);
+NUM_TYPE checkType(char *type, AST_NODE *data, char *var);
+SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr);
+AST_NODE *resolveOneOp(AST_NODE *op);
+AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op);
+AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList);
+NUM_AST_NODE *readVal();
 #endif

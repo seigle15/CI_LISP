@@ -46,6 +46,11 @@ OPER_TYPE resolveFunc(char *funcName)
     return CUSTOM_OPER;
 }
 
+
+//*********************************
+// Node Creation Functions
+//*********************************
+
 // Called when an INT or DOUBLE token is encountered (see ciLisp.l and ciLisp.y).
 // Creates an AST_NODE for the .
 // Sets the AST_NODE's type to .
@@ -107,10 +112,58 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *opList)
     node->data.function.oper = resolveFunc(funcName);
     node->data.function.opList = opList;
 
-
-    if(node->data.function.opList != NULL){
-        node->data.function.opList->parent = node;
+    AST_NODE *setParentTemp = opList;
+    while (setParentTemp != NULL){
+        setParentTemp->parent = node;
+        setParentTemp = setParentTemp->next;
     }
+
+    return node;
+}
+
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
+    SYMBOL_TABLE_NODE *symbolTableNode;
+    size_t nodeSize;
+
+    nodeSize = sizeof(SYMBOL_TABLE_NODE);
+    if ((symbolTableNode = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
+    symbolTableNode->ident = ident;
+    symbolTableNode->val_type = node->data.number.type;
+    symbolTableNode->val = node;
+
+    if(symbolTableNode->val->type == NUM_NODE_TYPE){
+        symbolTableNode->val_type = checkType(type, symbolTableNode->val, symbolTableNode->ident);
+    }
+    return symbolTableNode;
+}
+
+AST_NODE *createSymbolNode(char *ident){
+    AST_NODE *node;
+    size_t nodeSize;
+
+    // allocate space for the fixed sie and the variable part (union)
+    nodeSize = sizeof(AST_NODE);
+    if ((node = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
+    node->type = SYMBOL_NODE_TYPE;
+    node->data.symbol.ident = malloc(sizeof(ident) + 1);
+    strcpy(node->data.symbol.ident, ident);
+
+    return node;
+}
+
+AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next){
+    if(node == NULL){
+        return NULL;
+    }
+    if(next == NULL){
+        node->next = NULL;
+        return node;
+    }
+    node->next = next;
 
     return node;
 }
@@ -139,6 +192,11 @@ void freeNode(AST_NODE *node)
     free(node);
 }
 
+
+//*********************************
+// Evaluation Functions
+//*********************************
+
 // Evaluates an AST_NODE.
 // returns a RET_VAL storing the the resulting value and type.
 // You'll need to update and expand eval (and the more specific eval functions below)
@@ -164,6 +222,9 @@ RET_VAL eval(AST_NODE *node)
         case SYMBOL_NODE_TYPE:
             //printf("Resolving Symbol ");
             result = evalSymbolNode(node);
+            break;
+        case COND_NODE_TYPE:
+            //eval Condition Node
             break;
         default:
             yyerror("Invalid AST_NODE_TYPE, probably invalid writes somewhere!");
@@ -194,7 +255,6 @@ RET_VAL evalNumNode(NUM_AST_NODE *numNode)
     return result;
 }
 
-
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 {
     if (!funcNode){
@@ -205,80 +265,99 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
 
         switch (funcNode->oper){
             case NEG_OPER :
-                result = resolveOneOp(funcNode->opList);
+                funcNode->opList = resolveOneOp(funcNode->opList);
                 result.val = -funcNode->opList->data.number.val;
+                result.type = funcNode->opList->data.number.type;
                 break;
             case ABS_OPER:
-                result = resolveOneOp(funcNode->opList );
+                funcNode->opList = resolveOneOp(funcNode->opList );
                 result.val = fabs(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case EXP_OPER:
-                result = resolveOneOp(funcNode->opList);
+                funcNode->opList = resolveOneOp(funcNode->opList);
                 result.val = exp(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case SQRT_OPER:
-                result = resolveOneOp(funcNode->opList );
+                funcNode->opList = resolveOneOp(funcNode->opList );
                 result.val = sqrt(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case SUB_OPER:
-                result = resolveTwoOp(funcNode->oper, funcNode->opList );
+                funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList );
                 result.val = funcNode->opList->data.number.val -
                              funcNode->opList->next->data.number.val;
+                result.type = funcNode->opList->data.number.type;
                 break;
             case ADD_OPER:
-                result = resolveMultOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveMultOp(funcNode->oper, funcNode->opList);
+                result = funcNode->opList->data.number;
                 break;
             case MULT_OPER:
-                result = resolveMultOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveMultOp(funcNode->oper, funcNode->opList);
+                result = funcNode->opList->data.number;
                 break;
             case DIV_OPER:
                 if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
-                    result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                    funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                     result.val = funcNode->opList->data.number.val /
                                  funcNode->opList->next->data.number.val;
+                    result.type = funcNode->opList->data.number.type;
                 }
                 break;
             case REMAINDER_OPER:
                 if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
-                    result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                    funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                     result.val = remainder(funcNode->opList->data.number.val ,
                                            funcNode->opList->next->data.number.val);
                 }
+                result.type = funcNode->opList->data.number.type;
                 break;
             case LOG_OPER:
-                result = resolveOneOp(funcNode->opList);
+                funcNode->opList = resolveOneOp(funcNode->opList);
                 result.val = log(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case POW_OPER:
-                result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                 result.val = pow(funcNode->opList->data.number.val ,
                                  funcNode->opList->next->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case MAX_OPER:
-                result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                 result.val = fmax(funcNode->opList->data.number.val ,
                                   funcNode->opList->next->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case MIN_OPER:
-                result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                 result.val = fmin(funcNode->opList->data.number.val ,
                                   funcNode->opList->next->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case EXP2_OPER:
-                result = resolveOneOp(funcNode->opList);
+                funcNode->opList = resolveOneOp(funcNode->opList);
                 result.val = exp2(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case CBRT_OPER:
-                result = resolveOneOp(funcNode->opList);
+                funcNode->opList = resolveOneOp(funcNode->opList);
                 result.val = cbrt(funcNode->opList->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case HYPOT_OPER:
-                result = resolveTwoOp(funcNode->oper, funcNode->opList);
+                funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                 result.val = hypot(funcNode->opList->data.number.val ,
                                    funcNode->opList->next->data.number.val);
+                result.type = funcNode->opList->data.number.type;
                 break;
             case PRINT_OPER:
                 result = printExpr(funcNode->opList);
+                break;
+            case READ_OPER:
+                result = *readVal();
                 break;
             default:
                 printf("Invalid function or not implemented yet...");
@@ -288,77 +367,96 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
     return result;
 }
 
-
-AST_NODE *addToList(AST_NODE *list){
-    RET_VAL retVal = {INT_TYPE, NAN};
-    retVal = evalFuncNode(&list->data.function);
-    AST_NODE *node = createNumberNode(retVal.val, retVal.type);
-    node->next = list->next;
- //   freeNode(list);
-    (*list) = *node;
-    return list;
-
-}
-
-RET_VAL resolveOneOp(AST_NODE *op){
-    RET_VAL retVal = {INT_TYPE, NAN};
-    if(op->type == FUNC_NODE_TYPE){
-        (*op) = *(addToList(op));
+RET_VAL evalSymbolNode(AST_NODE *node){
+    if(node == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
     }
-    retVal.type = op->data.number.type;
-    return retVal;
+    SYMBOL_TABLE_NODE *val = findSymbol(node->data.symbol.ident, node);
+
+    if(val == NULL){
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+
+    return eval(val->val);
 }
 
-RET_VAL resolveTwoOp(OPER_TYPE type, AST_NODE *op){
+//*********************************
+// HELPER FUNCTIONS
+//*********************************
+
+AST_NODE *resolveOneOp(AST_NODE *op){
+    RET_VAL retVal = {INT_TYPE, NAN};
+    if(op == NULL){
+        return NULL;
+    }
+    if(op->type != NUM_NODE_TYPE){
+        retVal = eval(op);
+    }
+    op->data.number = retVal;
+    return op;
+}
+
+AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op){
     RET_VAL retVal = {INT_TYPE, NAN};
     if(op->next == NULL){
         printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
-        return retVal;
+        return NULL;
     }
-    if(op->type == FUNC_NODE_TYPE){
-        (*op) = *(addToList(op));
+    if(op->type != NUM_NODE_TYPE){
+        retVal = eval(op);
+        op->data.number.val = retVal.val;
+        op->data.number.type = retVal.type;
     }
-    if(op->next->type == FUNC_NODE_TYPE){
-        (*op->next) = *(addToList(op->next));
+    if(op->next->type != NUM_NODE_TYPE){
+        retVal = eval(op->next);
+        op->next->data.number.type = retVal.type;
+        op->next->data.number.val = retVal.val;
     }
     if(op->data.number.type == DOUBLE_TYPE || op->next->data.number.type == DOUBLE_TYPE){
-        retVal.type = DOUBLE_TYPE;
+        op->data.number.type = DOUBLE_TYPE;
     }
     else{
-        retVal.type = INT_TYPE;
+        op->data.number.type = INT_TYPE;
     }
-    return retVal;
+    return op;
 }
 
-RET_VAL resolveMultOp(OPER_TYPE type, AST_NODE *opList){
+AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList){
     RET_VAL retVal = {INT_TYPE, NAN};
     if(opList->next == NULL ){
         printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
-        return retVal;
+        return NULL;
     }
-    if(type == MULT_OPER){
-        retVal.val = 1;
+    if(opList->type != NUM_NODE_TYPE){
+        retVal = eval(opList);
+        opList->data.number.val = retVal.val;
+        opList->data.number.type = retVal.type;
     }
-    else{
-        retVal.val = 0;
+    AST_NODE *iterator = opList->next;
+
+    if(iterator == NULL){
+        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
+        return NULL;
     }
-    AST_NODE *iterator = opList;
 
     while (iterator != NULL){
 
-        if(iterator->type == FUNC_NODE_TYPE){
-            (*iterator) = *(addToList(iterator));
+        if(iterator->type != NUM_NODE_TYPE){
+            retVal = eval(iterator);
+            iterator->data.number.val = retVal.val;
+            iterator->data.number.type = retVal.type;
         }
         switch (type){
             case ADD_OPER:
-                retVal.val += iterator->data.number.val;
+                opList->data.number.val += iterator->data.number.val;
+                if(iterator->data.number.type == DOUBLE_TYPE){
+                    opList->data.number.type = iterator->data.number.type;
+                }
                 break;
             case MULT_OPER:
-                if(retVal.val == NAN){
-                    retVal.val = iterator->data.number.val;
-                }
-                else{
-                    retVal.val *= iterator->data.number.val;
+                opList->data.number.val *= iterator->data.number.val;
+                if(iterator->data.number.type == DOUBLE_TYPE){
+                    opList->data.number.type = iterator->data.number.type;
                 }
                 break;
             default:
@@ -368,10 +466,8 @@ RET_VAL resolveMultOp(OPER_TYPE type, AST_NODE *opList){
         iterator = iterator->next;
     }
 
-
-    return retVal;
+    return opList;
 }
-
 
 // prints the type and value of a RET_VAL
 void printRetVal(RET_VAL val)
@@ -394,9 +490,11 @@ SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
         printf("Symbol Not Declared: %s\n", ident);
         return NULL;
     }
-    SYMBOL_TABLE_NODE *node = s_expr->table;
+    else if(s_expr->table == NULL && s_expr->parent != NULL){
+        s_expr->table = findSymbol(ident, s_expr->parent);
+    }
 
-    //if(s_expr.)
+    SYMBOL_TABLE_NODE *node = s_expr->table;
 
     while (node != NULL && strcmp(ident, node->ident) != 0){
         node = node->next;
@@ -404,35 +502,7 @@ SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     if(node == NULL){
         node = findSymbol(ident, s_expr->parent);
     }
-    return node;
-}
-
-RET_VAL evalSymbolNode(AST_NODE *node){
-    if(node == NULL){
-        return (RET_VAL){INT_TYPE, NAN};
-    }
-    SYMBOL_TABLE_NODE *val = findSymbol(node->data.symbol.ident, node);
-
-    if(val == NULL){
-        return (RET_VAL){INT_TYPE, NAN};
-    }
-
-    return eval(val->val);
-}
-
-AST_NODE *createSymbolNode(char *ident){
-    AST_NODE *node;
-    size_t nodeSize;
-
-    // allocate space for the fixed sie and the variable part (union)
-    nodeSize = sizeof(AST_NODE);
-    if ((node = calloc(nodeSize, 1)) == NULL)
-        yyerror("Memory allocation failed!");
-
-    node->type = SYMBOL_NODE_TYPE;
-    node->data.symbol.ident = malloc(sizeof(ident) + 1);
-    strcpy(node->data.symbol.ident, ident);
-
+    //node.
     return node;
 }
 
@@ -472,22 +542,6 @@ NUM_TYPE checkType(char *type, AST_NODE *data, char *var){
     return NO_TYPE;
 }
 
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
-    SYMBOL_TABLE_NODE *symbolTableNode;
-    size_t nodeSize;
-
-    nodeSize = sizeof(SYMBOL_TABLE_NODE);
-    if ((symbolTableNode = calloc(nodeSize, 1)) == NULL)
-        yyerror("Memory allocation failed!");
-
-    symbolTableNode->ident = ident;
-    symbolTableNode->val_type = node->data.number.type;
-    symbolTableNode->val = node;
-
-    symbolTableNode->val_type = checkType(type, symbolTableNode->val, symbolTableNode->ident);
-    return symbolTableNode;
-}
-
 SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode){
 
     if(newNode == NULL){
@@ -497,16 +551,19 @@ SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *
     return newNode;
 }
 
-
-RET_VAL printSymbolTable(SYMBOL_TABLE_NODE *table){
+RET_VAL printSymbol(AST_NODE *symASTNode){
     RET_VAL result = {INT_TYPE, NAN};
 
-    while(table != NULL){
-        printf("Symbol: %s = %f ", table->ident, table->val->data.number.val);
-        result.type = table->val_type;
-        result.val = table->val->data.number.val;
-        table = table->next;
+    SYMBOL_TABLE_NODE *symbol  = findSymbol(symASTNode->data.symbol.ident, symASTNode->parent);
+    if(symbol->val->type != NUM_NODE_TYPE){
+        result = eval(symbol->val);
+        symbol->val->data.number.val = result.val;
+        symbol->val->data.number.type = result.type;
     }
+    printf("Symbol: %s = %f ", symbol->ident, symbol->val->data.number.val);
+    result.type = symbol->val->data.number.type;
+    result.val = symbol->val->data.number.val;
+
     return result;
 }
 
@@ -526,16 +583,17 @@ RET_VAL printExpr(AST_NODE *node){
                 result.val = iterator->data.number.val;
                 break;
             case FUNC_NODE_TYPE:
-                (*iterator) = (*addToList(iterator));
                 printf("Function %s Evaluation: %f", funcNames[node->data.function.oper], iterator->data.number.val);
                 result.type = iterator->data.number.type;
                 result.val = iterator->data.number.val;
                 break;
             case SYMBOL_NODE_TYPE:
-                printSymbolTable(iterator->table);
+                result  = printSymbol(iterator);
+                break;
+            case COND_NODE_TYPE:
+
                 break;
         }
-
         iterator = iterator->next;
     }
     printf("\n");
@@ -543,20 +601,30 @@ RET_VAL printExpr(AST_NODE *node){
     return result;
 }
 
+RET_VAL *readVal(){
+    double input;
+    printf("read ::= ");
+    scanf("%lf", &input);
+    RET_VAL *node;
 
-/*TASK #5 FUNCTIONS */
-AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next){
-    if(node == NULL){
-        return NULL;
+    size_t nodeSize;
+
+    // allocate space for the fixed sie and the variable part (union)
+    nodeSize = sizeof(RET_VAL);
+    if ((node = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
+    //if the entered value includes a dot, then the type of the variable should be set to double
+    if(input != (long)input){
+        node->type = DOUBLE_TYPE;
+        node->val = input;
     }
-    if(next == NULL){
-        node->next = NULL;
-        return node;
+    else{
+        node->type = INT_TYPE;
+        node->val = floor(input);
     }
-    node->next = next;
 
     return node;
 }
 
-/*  HELPER FUNCTIONS  */
 

@@ -11,7 +11,7 @@
 
 %token <sval> FUNC SYMBOL TYPE
 %token <dval> INT DOUBLE
-%token LPAREN RPAREN EOL QUIT LET
+%token LPAREN RPAREN EOL QUIT LET COND
 
 
 %type <astNode> s_expr_list s_expr symbol f_expr number
@@ -34,7 +34,7 @@ s_expr:
         $$ = $1;
     }
     | symbol {
-    fprintf(stderr, "yacc: symbol ::= SYMBOL\n");
+        fprintf(stderr, "yacc: symbol ::= SYMBOL\n");
         $$ = $1;
     }
     | LPAREN let_section s_expr RPAREN{
@@ -42,8 +42,11 @@ s_expr:
         $$ = linkSymbolTable($2, $3);
     }
     | f_expr {
-    fprintf(stderr, "yacc: f_expr ::= FUNC\n");
+        fprintf(stderr, "yacc: f_expr ::= FUNC\n");
         $$ = $1;
+    }
+    | LPAREN COND s_expr s_expr s_expr RPAREN {
+
     }
     | QUIT {
         fprintf(stderr, "yacc: s_expr ::= QUIT\n");
@@ -123,8 +126,6 @@ symbol:
         fprintf(stderr, "yacc: symbol ::= SYMBOL\n");
         $$ = createSymbolNode($1);
     }
-
-
 
 
 %%
