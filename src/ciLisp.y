@@ -11,11 +11,11 @@
 
 %token <sval> FUNC SYMBOL TYPE
 %token <dval> INT DOUBLE
-%token LPAREN RPAREN EOL QUIT LET COND
+%token LPAREN RPAREN EOL QUIT LET COND LAMBDA
 
 
 %type <astNode> s_expr_list s_expr symbol f_expr number
-%type <symNode> let_elem let_list let_section
+%type <symNode> let_elem let_list let_section arg_list
 
 %%
 
@@ -46,6 +46,7 @@ s_expr:
         $$ = $1;
     }
     | LPAREN COND s_expr s_expr s_expr RPAREN {
+        fprintf(stderr, "yacc: COND ::= COND s_expr s_expr s_expr\n");
          $$ = createConditionNode($3, $4, $5);
     }
     | QUIT {
@@ -86,12 +87,21 @@ let_elem:
         | LPAREN TYPE SYMBOL s_expr RPAREN{
         fprintf(stderr, "yacc: let_elem ::= TYPE SYMBOL s_expr\n");
         $$ = createSymbolTableNode($3, $4, $2);
+        }
+        | LPAREN SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN{
+            $$ = createCustomFuncNode(NULL, $2, $5, $7);
+        }
+        | LPAREN TYPE SYMBOL LAMBDA LPAREN arg_list RPAREN s_expr RPAREN{
+            $$ = createCustomFuncNode($2, $3, $6, $8);
       };
 
 f_expr:
   LPAREN FUNC s_expr_list RPAREN {
       fprintf(stderr, "yacc: f_expr ::= LPAREN FUNC expr_list RPAREN\n");
       $$ = createFunctionNode($2, $3);
+  }
+  | LPAREN SYMBOL s_expr_list RPAREN {
+      $$ = linkCustomFunc($2, $3);
   };
 
 
@@ -110,6 +120,16 @@ s_expr_list:
     fprintf(stderr, "yacc: s_expr_list ::= s_expr_list\n");
     $$ = createFuncList($1, NULL);
     };
+
+arg_list:
+        SYMBOL arg_list {
+        fprintf(stderr, "yacc: arg_list ::= SYMBOL arg_list\n");
+        $$ = addToStack($1, $2);
+        }
+        | SYMBOL {
+        fprintf(stderr, "yacc: arg_list ::= SYMBOL\n");
+        $$ = addToStack($1, NULL);
+        };
 
 number:
     INT {

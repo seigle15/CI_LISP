@@ -2,7 +2,7 @@ program ::= s-expr EOL
 
 s-expr ::= quit | number | symbol | f-expr | ( let_section s_expr ) | ( cond s_expr s_expr s_expr )
 
-f-expr ::= ( func s_expr_list )
+f-expr ::= ( func s_expr_list ) | ( symbol s_expr_list )
 
 s_expr_list ::= s_expr s_expr_list | s_expr | <empty>
 
@@ -11,7 +11,10 @@ func ::= neg|abs|exp|sqrt|add|sub|mult|div|remainder|log|pow|max|min|exp2|cbrt|h
 let_section ::= <empty> | ( let let_list )
 
 let_list ::= let_elem | let_list
-let_elem let_elem ::= ( [type] symbol s_expr )
+
+let_elem ::= ( [type] symbol s_expr )  | ( [type] symbol lambda ( arg_list ) s_expr )
+
+arg_list ::= symbol arg_list | symbol
 
 type ::= int | double
 symbol ::= letter+

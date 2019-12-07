@@ -40,6 +40,11 @@ type "double"|"int"
     return COND;
     }
 
+"lambda" {
+    fprintf(stderr, "lex: COND\n");
+    return LAMBDA;
+    }
+
 {func} {
     yylval.sval = (char *) malloc(strlen(yytext)*sizeof(char) + 1);
     strcpy(yylval.sval, yytext);

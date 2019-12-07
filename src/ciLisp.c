@@ -186,6 +186,13 @@ AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE 
     return node;
 }
 
+AST_NODE *createCustomFuncNode(char *type, AST_NODE *funcName, STACK_NODE *stackHead, AST_NODE *funcDef){
+
+
+
+    return funcName;
+}
+
 SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
     SYMBOL_TABLE_NODE *symbolTableNode;
     size_t nodeSize;
@@ -199,6 +206,14 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type
     symbolTableNode->val = node;
 
     return symbolTableNode;
+}
+
+STACK_NODE *addToStack(AST_NODE *head, AST_NODE *nextNode){
+    if(head == NULL){
+        return NULL;
+    }
+    nextNode->next = head;
+    return nextNode;
 }
 
 //*********************************
@@ -367,6 +382,22 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
         case READ_OPER:
             result = *readVal();
             break;
+        case RAND_OPER:
+            result = randVal();
+            break;
+        case EQUAL_OPER:
+            funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            result.val = (funcNode->opList->data.number.val == funcNode->opList->next->data.number.val);
+            break;
+        case LESS_OPER:
+            funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            result.val = (funcNode->opList->data.number.val < funcNode->opList->next->data.number.val);
+            break;
+        case GREATER_OPER:
+            funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            result.val = (funcNode->opList->data.number.val > funcNode->opList->next->data.number.val);
+            break;
+
         default:
             printf("Invalid function or not implemented yet...");
             break;
@@ -388,8 +419,11 @@ RET_VAL evalSymbolNode(AST_NODE *node){
     if(val->val->type != NUM_NODE_TYPE){
         retVal  = eval(val->val);
         retVal = checkType(val->val_type, retVal, val->ident);
+        //(*node).data.number = retVal;
+        (*val).val->type = NUM_NODE_TYPE;
         (*val).val->data.number.val = retVal.val;
         (*val).val->data.number.type = retVal.type;
+
     }
     else{
         retVal.type = val->val_type;
@@ -413,6 +447,11 @@ RET_VAL evalConditionNode(COND_AST_NODE *condNode){
 //********************************
 // Utility Functions
 //********************************
+
+AST_NODE *linkCustomFunc(AST_NODE *funcName, AST_NODE *funcData){
+
+    return funcName;
+}
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
 
@@ -453,15 +492,14 @@ SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     }
 
     SYMBOL_TABLE_NODE *node = s_expr->table;
-
-    while (node != NULL && strcmp(ident, node->ident) != 0){
-        node = node->next;
+    SYMBOL_TABLE_NODE *iterator = node;
+    while (iterator != NULL && strcmp(ident, iterator->ident) != 0){
+        iterator = iterator->next;
     }
-    if(node == NULL){
-        node = findSymbol(ident, s_expr->parent);
+    if(iterator == NULL){
+        iterator = findSymbol(ident, s_expr->parent);
     }
-    //node.
-    return node;
+    return iterator;
 }
 
 // Called after execution is done on the base of the tree.
@@ -473,7 +511,7 @@ void freeNode(AST_NODE *node)
     if (!node)
         return;
 
-    if (node->type == FUNC_NODE_TYPE)
+    if (node->type == FUNC_NODE_TYPE && node->data.function.opList != NULL)
     {
         // Recursive calls to free child nodes
         freeNode(node->data.function.opList->next);
@@ -662,6 +700,15 @@ AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList){
     }
 
     return opList;
+}
+
+RET_VAL randVal(){
+    if(arc4random_uniform(2) == 0){
+        return (RET_VAL){INT_TYPE, 0};
+    }
+    else{
+        return (RET_VAL){INT_TYPE, 1};
+    }
 }
 
 RET_VAL checkType(NUM_TYPE givenType, RET_VAL val, char *var){
