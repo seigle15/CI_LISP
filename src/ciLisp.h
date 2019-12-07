@@ -94,7 +94,7 @@ typedef struct symbol_ast_node {
 } SYMBOL_AST_NODE;
 
 
-typedef struct {
+typedef struct cond_ast_node{
     struct ast_node *cond; // this is the node that checks for non-zero or zero value
     struct ast_node *trueCond; // to eval if cond is nonzero
     struct ast_node *falseCond; // to eval if cond is zero
@@ -119,28 +119,28 @@ typedef struct ast_node {
 AST_NODE *createNumberNode(double value, NUM_TYPE type);
 AST_NODE *createFunctionNode(char *funcName, AST_NODE *opList);
 AST_NODE *createSymbolNode(char *ident);
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type);
 AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next);
-
-AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
-
-SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode);
-void freeNode(AST_NODE *node);
+AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE *falseExpr);
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type);
 
 RET_VAL eval(AST_NODE *node);
 RET_VAL evalNumNode(NUM_AST_NODE *numNode);
 RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
+RET_VAL evalConditionNode(COND_AST_NODE *condNode);
 
+AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node);
+SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *newNode);
+SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr);
+void freeNode(AST_NODE *node);
+void printRetVal(RET_VAL val);
+NUM_AST_NODE *readVal();
 RET_VAL printExpr(AST_NODE *node);
 
-void printRetVal(RET_VAL val);
-
 /*  HELPER FUNCTIONS  */
-NUM_TYPE checkType(char *type, AST_NODE *data, char *var);
-SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr);
 AST_NODE *resolveOneOp(AST_NODE *op);
 AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op);
 AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList);
-NUM_AST_NODE *readVal();
+RET_VAL checkType(NUM_TYPE type, RET_VAL val, char *var);
+
 #endif

@@ -46,7 +46,7 @@ s_expr:
         $$ = $1;
     }
     | LPAREN COND s_expr s_expr s_expr RPAREN {
-
+         $$ = createConditionNode($3, $4, $5);
     }
     | QUIT {
         fprintf(stderr, "yacc: s_expr ::= QUIT\n");
