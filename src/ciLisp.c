@@ -186,14 +186,7 @@ AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE 
     return node;
 }
 
-AST_NODE *createCustomFuncNode(char *type, AST_NODE *funcName, STACK_NODE *stackHead, AST_NODE *funcDef){
-
-
-
-    return funcName;
-}
-
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type){
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, AST_NODE *symNode, char *lambda, STACK_NODE *stackNode, AST_NODE *node){
     SYMBOL_TABLE_NODE *symbolTableNode;
     size_t nodeSize;
 
@@ -201,19 +194,42 @@ SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type
     if ((symbolTableNode = calloc(nodeSize, 1)) == NULL)
         yyerror("Memory allocation failed!");
 
-    symbolTableNode->ident = ident;
+    symbolTableNode->ident = symNode->data.symbol.ident;
     symbolTableNode->val_type = resolveType(type);
     symbolTableNode->val = node;
+    if(lambda == NULL){
+        symbolTableNode->type = VARIABLE_TYPE;
+    }
+    else if(strcmp(lambda, "lambda") == 0){
+        symbolTableNode->type = LAMBDA_TYPE;
+        symbolTableNode->stack = stackNode;
+    }
 
     return symbolTableNode;
 }
 
-STACK_NODE *addToStack(AST_NODE *head, AST_NODE *nextNode){
+STACK_NODE *createStackNodes(AST_NODE *head, STACK_NODE *next){
+
+    STACK_NODE *headNode;
+    size_t nodeSize;
+
+    nodeSize = sizeof(STACK_NODE);
+    if ((headNode = calloc(nodeSize, 1)) == NULL)
+        yyerror("Memory allocation failed!");
+
     if(head == NULL){
         return NULL;
     }
-    nextNode->next = head;
-    return nextNode;
+    headNode->type = ARG_TYPE;
+    headNode->ident = head->data.symbol.ident;
+    nodeSize = sizeof(AST_NODE);
+    headNode->val = calloc(nodeSize, 1);
+
+   if(next != NULL){
+       headNode->next = next;
+   }
+    return headNode;
+
 }
 
 //*********************************
@@ -397,7 +413,9 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
             result.val = (funcNode->opList->data.number.val > funcNode->opList->next->data.number.val);
             break;
-
+        case CUSTOM_OPER:
+            result = callCustomFunc(funcNode);
+            break;
         default:
             printf("Invalid function or not implemented yet...");
             break;
@@ -450,7 +468,11 @@ RET_VAL evalConditionNode(COND_AST_NODE *condNode){
 
 AST_NODE *linkCustomFunc(AST_NODE *funcName, AST_NODE *funcData){
 
-    return funcName;
+    AST_NODE *customFunc = createFunctionNode(funcName->data.symbol.ident, funcData);
+    customFunc->data.function.ident = funcName->data.symbol.ident;
+    customFunc->data.function.opList->parent = customFunc;
+
+    return customFunc;
 }
 
 AST_NODE *linkSymbolTable(SYMBOL_TABLE_NODE *symbolNode, AST_NODE *node){
@@ -492,14 +514,21 @@ SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     }
 
     SYMBOL_TABLE_NODE *node = s_expr->table;
-    SYMBOL_TABLE_NODE *iterator = node;
-    while (iterator != NULL && strcmp(ident, iterator->ident) != 0){
-        iterator = iterator->next;
+
+    while (node != NULL && strcmp(ident, node->ident) != 0){
+        node = node->next;
     }
-    if(iterator == NULL){
-        iterator = findSymbol(ident, s_expr->parent);
+
+    if(node == NULL && s_expr->table != NULL){
+        node = s_expr->table->stack;
+        while (node != NULL && strcmp(ident, node->ident) != 0){
+            node = node->next;
+        }
     }
-    return iterator;
+    if(node == NULL){
+        node = findSymbol(ident, s_expr->parent);
+    }
+    return node;
 }
 
 // Called after execution is done on the base of the tree.
@@ -534,10 +563,10 @@ void printRetVal(RET_VAL val)
         printf("INT_TYPE: %.f", round(val.val ));
     }
     else if(val.type == DOUBLE_TYPE){
-        printf("DOUBLE_TYPE: %f", val.val );
+        printf("DOUBLE_TYPE: %.2f", val.val );
     }
-    else{
-        printf("INVALID: %f", val.val );
+    else {
+        printf("NO_TYPE: %.f", val.val );
     }
 
 }
@@ -727,6 +756,40 @@ RET_VAL checkType(NUM_TYPE givenType, RET_VAL val, char *var){
         return val;
     }
 
+}
+
+RET_VAL callCustomFunc(FUNC_AST_NODE *func){
+    SYMBOL_TABLE_NODE *tableNode = findSymbol(func->ident, func->opList->parent);
+    if(tableNode->type != LAMBDA_TYPE || tableNode == NULL){
+        printf("Function not defined %s\n", func->ident);
+        return (RET_VAL){INT_TYPE, NAN};
+        //findSymbol(tableNode->ident, tableNode)
+    }
+    RET_VAL replace = {INT_TYPE, NAN};
+    if(tableNode->stack == NULL){
+        return eval(tableNode->val);
+    }
+    //func->opList = func->opList->next;
+    STACK_NODE *temp = tableNode->stack;
+    while(func->opList != NULL){
+        if(func->opList != NULL && tableNode->stack == NULL){
+            printf("Too many arguments\n!");
+            return (RET_VAL){INT_TYPE, NAN};
+        }
+        replace = eval(func->opList);
+        (*temp).val->data.number = replace;
+        temp->val->type = NUM_NODE_TYPE;
+        func->opList = func->opList->next;
+        temp = temp->next;
+    }
+    replace = eval(tableNode->val);
+
+    if(temp != NULL){
+        printf("Too few arguments\n!");
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+
+    return replace;
 }
 
 

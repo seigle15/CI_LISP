@@ -84,10 +84,7 @@ typedef NUM_AST_NODE RET_VAL;
 
 typedef enum { VARIABLE_TYPE, LAMBDA_TYPE, ARG_TYPE } SYMBOL_TYPE;
 
-typedef struct stack_node {
-    struct ast_node *val;
-    struct stack_node *next;
-} STACK_NODE;
+typedef struct symbol_table_node STACK_NODE;
 
 typedef struct symbol_table_node {
     SYMBOL_TYPE type;
@@ -97,6 +94,7 @@ typedef struct symbol_table_node {
     STACK_NODE *stack;
     struct symbol_table_node *next;
 } SYMBOL_TABLE_NODE;
+
 
 
 typedef struct symbol_ast_node {
@@ -117,7 +115,7 @@ typedef struct ast_node {
     AST_NODE_TYPE type;
     SYMBOL_TABLE_NODE  *table;
     struct ast_node *parent;
-    union {
+    struct {
         NUM_AST_NODE number;
         FUNC_AST_NODE function;
         COND_AST_NODE condition;
@@ -131,8 +129,8 @@ AST_NODE *createFunctionNode(char *funcName, AST_NODE *opList);
 AST_NODE *createSymbolNode(char *ident);
 AST_NODE *createFuncList(AST_NODE *node, AST_NODE *next);
 AST_NODE *createConditionNode(AST_NODE *condition, AST_NODE *trueExpr, AST_NODE *falseExpr);
-AST_NODE *createCustomFuncNode(char *type, AST_NODE *funcName, STACK_NODE *stackHead, AST_NODE *funcDef);
-SYMBOL_TABLE_NODE *createSymbolTableNode(char *ident, AST_NODE *node, char *type);
+SYMBOL_TABLE_NODE *createSymbolTableNode(char *type, AST_NODE *symNode, char *lambda, STACK_NODE *stackNode, AST_NODE *node);
+STACK_NODE *createStackNodes(AST_NODE *head, STACK_NODE *next);
 
 RET_VAL eval(AST_NODE *node);
 RET_VAL evalNumNode(NUM_AST_NODE *numNode);
@@ -148,7 +146,7 @@ void freeNode(AST_NODE *node);
 void printRetVal(RET_VAL val);
 NUM_AST_NODE *readVal();
 RET_VAL printExpr(AST_NODE *node);
-STACK_NODE *addToStack(AST_NODE *head, AST_NODE *nextNode);
+
 
 /*  HELPER FUNCTIONS  */
 AST_NODE *resolveOneOp(AST_NODE *op);
@@ -156,5 +154,6 @@ AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op);
 AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList);
 RET_VAL randVal();
 RET_VAL checkType(NUM_TYPE type, RET_VAL val, char *var);
+RET_VAL callCustomFunc(FUNC_AST_NODE *func);
 
 #endif
