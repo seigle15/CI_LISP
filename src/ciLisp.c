@@ -319,7 +319,7 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
             result.type = funcNode->opList->data.number.type;
             break;
         case SQRT_OPER:
-            funcNode->opList = resolveOneOp(funcNode->opList );
+            funcNode->opList = resolveOneOp(funcNode->opList);
             result.val = sqrt(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
@@ -429,6 +429,10 @@ RET_VAL evalSymbolNode(AST_NODE *node){
         return (RET_VAL){INT_TYPE, NAN};
     }
     SYMBOL_TABLE_NODE *val = findSymbol(node->data.symbol.ident, node);
+    if(val == NULL){
+        printf("Symbol Not Declared: %s\n", node->data.symbol.ident);
+        return (RET_VAL){INT_TYPE, NAN};
+    }
 
     if(val == NULL){
         return (RET_VAL){INT_TYPE, NAN};
@@ -444,8 +448,9 @@ RET_VAL evalSymbolNode(AST_NODE *node){
 
     }
     else{
-        retVal.type = val->val_type;
         retVal.val = val->val->data.number.val;
+        retVal = checkType(val->val_type, retVal, val->ident);
+
     }
 
     return retVal;
@@ -506,7 +511,6 @@ SYMBOL_TABLE_NODE *addToSymbolTable(SYMBOL_TABLE_NODE *head, SYMBOL_TABLE_NODE *
 
 SYMBOL_TABLE_NODE *findSymbol(char *ident, AST_NODE *s_expr){
     if(s_expr == NULL){
-        printf("Symbol Not Declared: %s\n", ident);
         return NULL;
     }
     else if(s_expr->table == NULL && s_expr->parent != NULL){
@@ -575,14 +579,18 @@ RET_VAL printSymbol(AST_NODE *symASTNode){
     RET_VAL result = {INT_TYPE, NAN};
 
     SYMBOL_TABLE_NODE *symbol  = findSymbol(symASTNode->data.symbol.ident, symASTNode->parent);
+    if(symbol == NULL){
+        printf("Symbol Not Declared: %s\n", symASTNode->data.symbol.ident);
+        return (RET_VAL){INT_TYPE, NAN};
+    }
     result = eval(symbol->val);
     result = checkType(symbol->val_type, result, symbol->ident);
 
     if(symbol->val_type == INT_TYPE){
-        printf("Symbol: %s = %.f \n", symbol->ident, result.val);
+        printf("Symbol: %s = %.f ", symbol->ident, result.val);
     }
     else{
-        printf("Symbol: %s = %.2f \n", symbol->ident, result.val);
+        printf("Symbol: %s = %.2f ", symbol->ident, result.val);
     }
 
     return result;
@@ -654,8 +662,8 @@ AST_NODE *resolveOneOp(AST_NODE *op){
     }
     if(op->type != NUM_NODE_TYPE){
         retVal = eval(op);
+        op->data.number = retVal;
     }
-    op->data.number = retVal;
     return op;
 }
 
@@ -686,22 +694,21 @@ AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op){
 
 AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList){
     RET_VAL retVal = {INT_TYPE, NAN};
-    if(opList->next == NULL ){
-        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
-        return NULL;
-    }
-    if(opList->type != NUM_NODE_TYPE){
-        retVal = eval(opList);
-        opList->data.number.val = retVal.val;
-        opList->data.number.type = retVal.type;
-    }
-    AST_NODE *iterator = opList->next;
-
-    if(iterator == NULL){
+    if(opList == NULL ){
         printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
         return NULL;
     }
 
+    AST_NODE *iterator = opList;
+
+    if(iterator->next == NULL){
+        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
+        return NULL;
+    }
+    retVal = eval(iterator);
+    iterator->data.number.val = retVal.val;
+    iterator->data.number.type = retVal.type;
+    iterator = iterator->next;
     while (iterator != NULL){
         if(iterator->type != NUM_NODE_TYPE){
             retVal = eval(iterator);
@@ -710,7 +717,7 @@ AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList){
         }
         switch (type){
             case ADD_OPER:
-                opList->data.number.val += iterator->data.number.val;
+                (*opList).data.number.val += iterator->data.number.val;
                 if(iterator->data.number.type == DOUBLE_TYPE){
                     opList->data.number.type = iterator->data.number.type;
                 }
@@ -749,6 +756,7 @@ RET_VAL checkType(NUM_TYPE givenType, RET_VAL val, char *var){
         if(val.val != (long)val.val){
             printf("WARNING: precision loss in the assignment for variable \"%s\"\n", var);
             val.val = round(val.val);
+            val.type = INT_TYPE;
         }
         return val;
     }
@@ -760,16 +768,21 @@ RET_VAL checkType(NUM_TYPE givenType, RET_VAL val, char *var){
 
 RET_VAL callCustomFunc(FUNC_AST_NODE *func){
     SYMBOL_TABLE_NODE *tableNode = findSymbol(func->ident, func->opList->parent);
+    if(tableNode == NULL){
+        printf("Symbol Not Declared: %s\n", func->ident);
+        return (RET_VAL){INT_TYPE, NAN};
+    }
+
     if(tableNode->type != LAMBDA_TYPE || tableNode == NULL){
         printf("Function not defined %s\n", func->ident);
         return (RET_VAL){INT_TYPE, NAN};
-        //findSymbol(tableNode->ident, tableNode)
     }
+
     RET_VAL replace = {INT_TYPE, NAN};
     if(tableNode->stack == NULL){
         return eval(tableNode->val);
     }
-    //func->opList = func->opList->next;
+
     STACK_NODE *temp = tableNode->stack;
     while(func->opList != NULL){
         if(func->opList != NULL && tableNode->stack == NULL){
