@@ -242,8 +242,11 @@ STACK_NODE *createStackNodes(AST_NODE *head, STACK_NODE *next){
 // as the project develops.
 RET_VAL eval(AST_NODE *node)
 {
-    if (!node)
+    if (!node){
+        printf("Invalid expression");
         return (RET_VAL){INT_TYPE, NAN};
+    }
+
 
     RET_VAL result = {INT_TYPE, NAN}; // see NUM_AST_NODE, because RET_VAL is just an alternative name for it.
 
