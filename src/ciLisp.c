@@ -308,47 +308,56 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
     switch (funcNode->oper){
         case NEG_OPER :
             funcNode->opList = resolveOneOp(funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = -funcNode->opList->data.number.val;
             result.type = funcNode->opList->data.number.type;
             break;
         case ABS_OPER:
             funcNode->opList = resolveOneOp(funcNode->opList );
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = fabs(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case EXP_OPER:
             funcNode->opList = resolveOneOp(funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = exp(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case SQRT_OPER:
             funcNode->opList = resolveOneOp(funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = sqrt(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case SUB_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList );
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = funcNode->opList->data.number.val -
                          funcNode->opList->next->data.number.val;
             result.type = funcNode->opList->data.number.type;
             break;
         case ADD_OPER:
             funcNode->opList = resolveMultOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result = funcNode->opList->data.number;
             break;
         case MULT_OPER:
             funcNode->opList = resolveMultOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result = funcNode->opList->data.number;
             break;
         case DIV_OPER:
             if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
                 funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+                if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
                 result.val = funcNode->opList->data.number.val /
                              funcNode->opList->next->data.number.val;
                 result.type = funcNode->opList->data.number.type;
             }
             break;
         case REMAINDER_OPER:
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             if(funcNode->opList->next != NULL && funcNode->opList->next->data.number.val != 0) {
                 funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
                 result.val = remainder(funcNode->opList->data.number.val ,
@@ -358,39 +367,49 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
             break;
         case LOG_OPER:
             funcNode->opList = resolveOneOp(funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = log(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case POW_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = pow(funcNode->opList->data.number.val ,
                              funcNode->opList->next->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case MAX_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = fmax(funcNode->opList->data.number.val ,
                               funcNode->opList->next->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case MIN_OPER:
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
             result.val = fmin(funcNode->opList->data.number.val ,
                               funcNode->opList->next->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case EXP2_OPER:
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             funcNode->opList = resolveOneOp(funcNode->opList);
             result.val = exp2(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case CBRT_OPER:
             funcNode->opList = resolveOneOp(funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result.val = cbrt(funcNode->opList->data.number.val);
             result.type = funcNode->opList->data.number.type;
             break;
         case HYPOT_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = hypot(funcNode->opList->data.number.val ,
                                funcNode->opList->next->data.number.val);
             result.type = funcNode->opList->data.number.type;
@@ -406,17 +425,24 @@ RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode)
             break;
         case EQUAL_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = (funcNode->opList->data.number.val == funcNode->opList->next->data.number.val);
             break;
         case LESS_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = (funcNode->opList->data.number.val < funcNode->opList->next->data.number.val);
             break;
         case GREATER_OPER:
             funcNode->opList = resolveTwoOp(funcNode->oper, funcNode->opList);
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
+            if(checkOpNull(funcNode->opList->next)) return (RET_VAL){INT_TYPE, NAN};
             result.val = (funcNode->opList->data.number.val > funcNode->opList->next->data.number.val);
             break;
         case CUSTOM_OPER:
+            if(checkOpNull(funcNode->opList)) return (RET_VAL){INT_TYPE, NAN};
             result = callCustomFunc(funcNode);
             break;
         default:
@@ -661,7 +687,12 @@ RET_VAL *readVal(){
 AST_NODE *resolveOneOp(AST_NODE *op){
     RET_VAL retVal = {INT_TYPE, NAN};
     if(op == NULL){
+        printf("No arguments given\n");
         return NULL;
+    }
+    if(op->next != NULL){
+        printf("Too many arguments: Taking first val\n");
+        return op;
     }
     if(op->type != NUM_NODE_TYPE){
         retVal = eval(op);
@@ -672,6 +703,10 @@ AST_NODE *resolveOneOp(AST_NODE *op){
 
 AST_NODE *resolveTwoOp(OPER_TYPE type, AST_NODE *op){
     RET_VAL retVal = {INT_TYPE, NAN};
+    if(op == NULL){
+        printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
+        return NULL;
+    }
     if(op->next == NULL){
         printf("ERROR: too few parameters for the function %s\n", funcNames[type]);
         return NULL;
@@ -808,5 +843,9 @@ RET_VAL callCustomFunc(FUNC_AST_NODE *func){
     return replace;
 }
 
+int checkOpNull(AST_NODE *op){
+    if(op == NULL) return 1;
+    else return 0;
+}
 
 

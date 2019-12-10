@@ -32,10 +32,6 @@ s_expr:
         fprintf(stderr, "yacc: s_expr ::= number\n");
         $$ = $1;
     }
-    | symbol {
-        fprintf(stderr, "yacc: symbol ::= SYMBOL\n");
-        $$ = $1;
-    }
     | LPAREN let_section s_expr RPAREN{
         fprintf(stderr, "yacc: s_expr ::= LET\n");
         $$ = linkSymbolTable($2, $3);
@@ -48,6 +44,10 @@ s_expr:
         fprintf(stderr, "yacc: COND ::= COND s_expr s_expr s_expr\n");
          $$ = createConditionNode($3, $4, $5);
     }
+        | symbol {
+            fprintf(stderr, "yacc: symbol ::= SYMBOL\n");
+            $$ = $1;
+        }
     | QUIT {
         fprintf(stderr, "yacc: s_expr ::= QUIT\n");
         exit(EXIT_SUCCESS);

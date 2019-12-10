@@ -134,8 +134,8 @@ STACK_NODE *createStackNodes(AST_NODE *head, STACK_NODE *next);
 
 RET_VAL eval(AST_NODE *node);
 RET_VAL evalNumNode(NUM_AST_NODE *numNode);
-RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalFuncNode(FUNC_AST_NODE *funcNode);
+RET_VAL evalSymbolNode(AST_NODE *node);
 RET_VAL evalConditionNode(COND_AST_NODE *condNode);
 
 AST_NODE *linkCustomFunc(AST_NODE *funcName, AST_NODE *funcData);
@@ -155,5 +155,6 @@ AST_NODE *resolveMultOp(OPER_TYPE type, AST_NODE *opList);
 RET_VAL randVal();
 RET_VAL checkType(NUM_TYPE type, RET_VAL val, char *var);
 RET_VAL callCustomFunc(FUNC_AST_NODE *func);
+int checkOpNull(AST_NODE *op);
 
 #endif
